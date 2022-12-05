@@ -26,40 +26,53 @@ static int should_check_owner = 0;
 static int fork_server();
 
 void create_socket_path(char **path) {
-    char *tmpdir;
+    const char *tmpdir = "/tmp";
+    const char *default_socket_name = "/socket-ts.";
     char userid[20];
     int size;
+
+    char *socket_name;
 
     /* As a priority, TS_SOCKET mandates over the path creation */
     *path = getenv("TS_SOCKET");
     if (*path != 0) {
-        /* We need this in our memory, for forks and future 'free'. */
-        size = strlen(*path) + 1;
-        *path = (char *) malloc(size);
-        strcpy(*path, getenv("TS_SOCKET"));
+        if (*path[0] == '.' || *path[0] == '/') {
+            /* If the socket path is an actual unix path, then use just that */
 
-        /* We don't want to check ownership of the socket here,
-         * as the user may have thought of some shared queue */
-        should_check_owner = 0;
-        return;
+            /* We need this in our memory, for forks and future 'free'. */
+            size = strlen(*path) + 1;
+            *path = (char *) malloc(size);
+            strcpy(*path, getenv("TS_SOCKET"));
+
+            /* We don't want to check ownership of the socket here,
+             * as the user may have thought of some shared queue */
+            should_check_owner = 0;
+            return;
+        } else {
+            /* Otherwise, if the socket path is just a name, use the default
+               socket directory this path uses the global tmp dir. */
+            size = strlen(tmpdir) + strlen(*path) + 2;
+            socket_name = (char*) malloc(size);
+            sprintf(socket_name, "%s/%s", tmpdir, *path);
+        }
+    } else {
+        size = strlen(tmpdir) + strlen(default_socket_name) + 2;
+        socket_name = (char*) malloc(size);
+        sprintf(socket_name, "%s%s", tmpdir, default_socket_name);
     }
 
     /* ... if the $TS_SOCKET doesn't exist ... */
-
-    /* Create the path */
-    tmpdir = getenv("TMPDIR");
-    if (tmpdir == NULL)
-        tmpdir = "/tmp";
-
     sprintf(userid, "%u", (unsigned int) getuid());
 
     /* Calculate the size */
-    size = strlen(tmpdir) + strlen("/socket-ts.") + strlen(userid) + 1;
+    size = strlen(socket_name) + strlen(userid) + 1;
 
     /* Freed after preparing the socket address */
     *path = (char *) malloc(size);
 
-    sprintf(*path, "%s/socket-ts.%s", tmpdir, userid);
+    sprintf(*path, "%s.%s", socket_name, userid);
+
+    free(socket_name);
 
     should_check_owner = 1;
 }

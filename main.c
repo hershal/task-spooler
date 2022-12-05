@@ -114,7 +114,7 @@ int strtok_int(char* str, char* delim, int* ids) {
 static struct option longOptions[] = {
         {"get_label",         optional_argument, NULL, 'a'},
         {"count_running",     no_argument,       NULL, 'R'},
-        {"last_queue_id",     no_argument,       NULL, 'q'},
+        {"last_queue_id",     no_argument,       NULL, 'Q'},
         {"full_cmd",          optional_argument, NULL, 'F'},
         {"getenv",            required_argument, NULL, 0},
         {"setenv",            required_argument, NULL, 0},
@@ -140,10 +140,10 @@ void parse_opts(int argc, char **argv) {
     /* Parse options */
     while (1) {
 #ifndef CPU
-        c = getopt_long(argc, argv, ":RTVhKzClnfmBEr:a:F:t:c:o:p:w:k:u:s:U:qi:N:L:dS:D:G:W:g:O:M:",
+        c = getopt_long(argc, argv, ":RTVhKzClnfmBEr:a:F:t:c:o:p:w:k:u:s:U:q:Qi:N:L:dS:D:G:W:g:O:M:",
                         longOptions, &optionIdx);
 #else
-        c = getopt_long(argc, argv, ":RTVhKzClnfmBEr:a:F:t:c:o:p:w:k:u:s:U:qi:N:L:dS:D:W:O:M:",
+        c = getopt_long(argc, argv, ":RTVhKzClnfmBEr:a:F:t:c:o:p:w:k:u:s:U:q:Qi:N:L:dS:D:W:O:M:",
                         longOptions, &optionIdx);
 #endif
 
@@ -264,6 +264,9 @@ void parse_opts(int argc, char **argv) {
                 command_line.jobid = atoi(optarg);
                 break;
             case 'q':
+                setenv("TS_SOCKET", optarg, 1);
+                break;
+            case 'Q':
                 command_line.request = c_LAST_ID;
                 break;
             case 'a':
@@ -509,7 +512,8 @@ static void print_help(const char *cmd) {
     printf("  --get_label      || -a [id]     show the job label. Of the last added, if not specified.\n");
     printf("  --full_cmd       || -F [id]     show full command. Of the last added, if not specified.\n");
     printf("  --count_running  || -R          return the number of running jobs\n");
-    printf("  --last_queue_id  || -q          show the job ID of the last added.\n");
+    printf("  --last_queue_id  || -Q          show the job ID of the last added.\n");
+    printf("  --queue          || -q          specify the queue, same as using TS_SOCKET\n");
     printf("  --get_logdir                    get the path containing log files.\n");
     printf("  --set_logdir [path]             set the path containing log files.\n");
 #ifndef CPU
